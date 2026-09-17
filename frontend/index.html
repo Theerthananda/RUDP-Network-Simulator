@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="description"
+      content="RUDP Reliable UDP Data Transfer and Network Simulator"
+    />
+
+    <title>RUDP Network Simulator</title>
+
+    <!-- ==============================
+         CSS
+    =============================== -->
+
+    <link rel="stylesheet" href="css/reset.css" />
+
+    <link rel="stylesheet" href="css/variables.css" />
+
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+
+  <body>
+    <!-- ==============================
+         APPLICATION
+    =============================== -->
+
+    <div class="app">
+      <!-- ==============================
+             HEADER
+        =============================== -->
+
+      <header class="app-header">
+        <div class="app-header__brand">
+          <div class="app-header__logo">R</div>
+
+          <div>
+            <h1 class="app-header__title">RUDP Network Simulator</h1>
+
+            <p class="app-header__subtitle">Reliable UDP Data Transfer</p>
+          </div>
+        </div>
+
+        <div class="app-header__status">
+          <span class="status-indicator" id="connectionStatus"></span>
+
+          <span id="connectionStatusText"> Simulator Ready </span>
+        </div>
+      </header>
+
+      <!-- ==============================
+             MAIN CONTENT
+        =============================== -->
+
+      <main class="app-main">
+        <!-- ==============================
+                 FILE & NETWORK CONFIGURATION
+            =============================== -->
+
+        <section
+          class="panel configuration-panel"
+          aria-labelledby="configurationTitle"
+        >
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">CONFIGURATION</p>
+
+              <h2 class="panel__title" id="configurationTitle">
+                Network Settings
+              </h2>
+            </div>
+            <div class="protocol-selector" role="group" aria-label="Transfer protocol">
+              <button type="button" class="protocol-selector__button is-selected" data-protocol="RUDP" aria-pressed="true">RUDP</button>
+              <button type="button" class="protocol-selector__button" data-protocol="UDP" aria-pressed="false">UDP</button>
+            </div>
+          </div>
+
+          <div class="configuration-grid">
+            <!-- FILE -->
+
+            <div class="form-group form-group--file">
+              <label class="form-label" for="fileInput"> Select File </label>
+
+              <input type="file" id="fileInput" class="file-input" />
+
+              <label for="fileInput" class="file-selector">
+                <span class="file-selector__icon"> 📁 </span>
+
+                <span class="file-selector__text" id="fileName">
+                  Choose a file
+                </span>
+              </label>
+            </div>
+
+            <!-- DATA LOSS -->
+
+            <div class="form-group">
+              <label class="form-label" for="packetLoss"> Packet Loss </label>
+
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  id="packetLoss"
+                  min="0"
+                  max="100"
+                  value="0"
+                />
+
+                <span>%</span>
+              </div>
+            </div>
+
+            <!-- ACK LOSS -->
+
+            <div class="form-group">
+              <label class="form-label" for="ackLoss"> ACK Loss </label>
+
+              <div class="input-with-unit">
+                <input type="number" id="ackLoss" min="0" max="100" value="0" />
+
+                <span id="ackLossUnit">%</span>
+              </div>
+            </div>
+
+            <!-- NETWORK DELAY -->
+
+            <div class="form-group">
+              <label class="form-label" for="networkDelay">
+                Network Delay
+              </label>
+
+              <div class="input-with-unit">
+                <input type="number" id="networkDelay" min="0" value="100" />
+
+                <span>ms</span>
+              </div>
+            </div>
+
+            <!-- CORRUPTION -->
+
+            <div class="form-group">
+              <label class="form-label" for="corruptionRate">
+                Corruption
+              </label>
+
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  id="corruptionRate"
+                  min="0"
+                  max="100"
+                  value="0"
+                />
+
+                <span>%</span>
+              </div>
+            </div>
+
+            <!-- PACKET SIZE -->
+
+            <div class="form-group">
+              <label class="form-label" for="packetSize"> Packet Size </label>
+
+              <div class="input-with-unit">
+                <input type="number" id="packetSize" min="1" value="1024" />
+
+                <span>bytes</span>
+              </div>
+            </div>
+
+            <!-- PROTOCOL-SPECIFIC SEND SIZE -->
+
+            <div class="form-group">
+              <label class="form-label" for="windowSize" id="sendSizeLabel"> Window Size </label>
+
+              <input type="number" id="windowSize" min="1" max="128" value="3" />
+            </div>
+          </div>
+
+          <!-- CONTROL BUTTONS -->
+
+          <div class="configuration-actions">
+            <button
+              type="button"
+              class="button button--primary"
+              id="startTransfer"
+            >
+              🚀 Start Transfer
+            </button>
+
+            <button
+              type="button"
+              class="button button--secondary"
+              id="resetSimulator"
+            >
+              ↻ Reset
+            </button>
+          </div>
+        </section>
+
+        <!-- ==============================
+                 NETWORK VISUALIZATION
+            =============================== -->
+
+        <section class="panel network-panel" aria-labelledby="networkTitle">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">LIVE NETWORK</p>
+
+              <h2 class="panel__title" id="networkTitle">
+                Packet Transmission
+              </h2>
+            </div>
+          </div>
+
+          <div class="network-visualization" id="networkVisualization">
+            <!-- SENDER -->
+
+            <div class="network-node network-node--sender" id="senderNode">
+              <div class="network-node__icon">↑</div>
+
+              <h3>Sender</h3>
+
+              <span> Source </span>
+            </div>
+
+            <!-- CONNECTION -->
+
+            <div class="network-path">
+              <div class="network-path__line"></div>
+
+              <div class="network-path__packets" id="packetContainer"></div>
+
+              <div class="network-path__label">UDP Network</div>
+            </div>
+
+            <!-- RECEIVER -->
+
+            <div class="network-node network-node--receiver" id="receiverNode">
+              <div class="network-node__icon">↓</div>
+
+              <h3>Receiver</h3>
+
+              <span> Destination </span>
+            </div>
+          </div>
+
+          <!-- NETWORK EVENTS -->
+
+          <div class="network-events">
+            <div class="network-events__header">
+              <h3>Network Events</h3>
+
+              <span id="eventCount"> 0 events </span>
+            </div>
+
+            <div class="event-log" id="eventLog">
+              <div class="event-log__empty">
+                Waiting for network activity...
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================
+                 LIVE METRICS
+            =============================== -->
+
+        <section class="panel metrics-panel" aria-labelledby="metricsTitle">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">PERFORMANCE</p>
+
+              <h2 class="panel__title" id="metricsTitle">Live Statistics</h2>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <!-- ==============================
+                         ORIGINAL PACKETS SENT
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Packets Sent </span>
+
+              <strong class="metric-card__value" id="packetsSent"> 0 </strong>
+            </div>
+
+            <!-- ==============================
+                         TOTAL TRANSMISSIONS
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Total Transmissions </span>
+
+              <strong class="metric-card__value" id="totalTransmissions">
+                0
+              </strong>
+            </div>
+
+            <!-- ==============================
+                         UNIQUE PACKETS RECEIVED
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Packets Received </span>
+
+              <strong class="metric-card__value" id="packetsReceived">
+                0
+              </strong>
+            </div>
+
+            <!-- ==============================
+                         LOST TRANSMISSIONS
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Packets Lost </span>
+
+              <strong class="metric-card__value" id="packetsLost"> 0 </strong>
+            </div>
+
+            <!-- ==============================
+                         RETRANSMISSIONS
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Retransmissions </span>
+
+              <strong class="metric-card__value" id="retransmissions">
+                0
+              </strong>
+            </div>
+
+            <!-- ==============================
+                         CORRUPTED
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Corrupted </span>
+
+              <strong class="metric-card__value" id="packetsCorrupted">
+                0
+              </strong>
+            </div>
+
+            <div class="metric-card">
+              <span class="metric-card__label"> CRC Errors </span>
+
+              <strong class="metric-card__value" id="checksumErrors"> 0 </strong>
+            </div>
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Integrity Retransmits </span>
+
+              <strong class="metric-card__value" id="integrityRetransmissions"> 0 </strong>
+            </div>
+
+            <!-- ==============================
+                         DUPLICATES
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Duplicates </span>
+
+              <strong class="metric-card__value" id="duplicates"> 0 </strong>
+            </div>
+
+            <!-- ==============================
+                         ACKS RECEIVED
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> ACKs Received </span>
+
+              <strong class="metric-card__value" id="acksReceived"> 0 </strong>
+            </div>
+
+            <!-- ==============================
+                         ACKS LOST
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> ACKs Lost </span>
+
+              <strong class="metric-card__value" id="acksLost"> 0 </strong>
+            </div>
+
+            <!-- ==============================
+                         AVERAGE RTT
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Average RTT </span>
+
+              <strong class="metric-card__value" id="averageRtt"> 0 ms </strong>
+            </div>
+
+            <!-- ==============================
+                         THROUGHPUT
+                    =============================== -->
+
+            <div class="metric-card">
+              <span class="metric-card__label"> Throughput </span>
+
+              <strong class="metric-card__value" id="throughput">
+                0 KB/s
+              </strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================
+                 TRANSFER PROGRESS
+            =============================== -->
+
+        <section class="panel progress-panel" aria-labelledby="progressTitle">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">TRANSFER STATUS</p>
+
+              <h2 class="panel__title" id="progressTitle">
+                File Transfer Progress
+              </h2>
+            </div>
+
+            <span class="progress-percentage" id="progressPercentage">
+              0%
+            </span>
+          </div>
+
+          <div class="progress-bar">
+            <div class="progress-bar__fill" id="progressBar"></div>
+          </div>
+
+          <div class="progress-details">
+            <span id="transferStatus"> Ready to transfer </span>
+
+            <span id="transferPackets"> 0 / 0 packets </span>
+          </div>
+        </section>
+
+        <!-- ==============================
+                 EXPERIMENT GRAPHS
+            =============================== -->
+
+        <section class="panel graphs-panel" aria-labelledby="graphsTitle">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">ANALYSIS</p>
+
+              <h2 class="panel__title" id="graphsTitle">
+                Performance Analysis
+              </h2>
+            </div>
+          </div>
+
+          <div class="graphs-grid">
+            <section class="graph-card" aria-labelledby="lossGraphTitle">
+              <header class="graph-card__header">
+                <span class="graph-card__icon graph-card__icon--loss" aria-hidden="true">▥</span>
+                <div>
+                  <h3 id="lossGraphTitle">Packet Loss &amp; Retransmissions</h3>
+                  <p class="graph-card__description">Shows the number of lost packets and retransmissions during the transfer.</p>
+                </div>
+              </header>
+              <div class="graph-card__content">
+                <div class="graph-placeholder" id="lossGraph">Graph will appear here</div>
+                <aside class="graph-side-panel" id="lossStats" aria-label="Packet statistics"></aside>
+              </div>
+            </section>
+
+            <section class="graph-card" aria-labelledby="rttGraphTitle">
+              <header class="graph-card__header">
+                <span class="graph-card__icon graph-card__icon--rtt" aria-hidden="true">〽</span>
+                <div>
+                  <h3 id="rttGraphTitle">Packet RTT</h3>
+                  <p class="graph-card__description">Round-trip time for each acknowledged DATA packet.</p>
+                </div>
+              </header>
+              <div class="graph-card__content">
+                <div class="graph-placeholder" id="rttGraph">Graph will appear here</div>
+                <aside class="graph-side-panel" id="rttStats" aria-label="RTT statistics"></aside>
+              </div>
+            </section>
+
+            <section class="graph-card" aria-labelledby="throughputGraphTitle">
+              <header class="graph-card__header">
+                <span class="graph-card__icon graph-card__icon--throughput" aria-hidden="true">●</span>
+                <div>
+                  <h3 id="throughputGraphTitle">Delay vs Throughput</h3>
+                  <p class="graph-card__description">Shows the relationship between configured network delay and measured throughput.</p>
+                </div>
+              </header>
+              <div class="graph-card__content">
+                <div class="graph-placeholder" id="throughputGraph">Graph will appear here</div>
+                <aside class="graph-side-panel graph-side-panel--history" id="experimentHistory" aria-label="Experiment history"></aside>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <!-- ==============================
+             FOOTER
+        =============================== -->
+
+      <footer class="app-footer">
+        <p>RUDP Network Simulator</p>
+
+        <span> Reliable UDP Data Transfer • MSc Mini Project </span>
+      </footer>
+    </div>
+
+    <!-- ==============================
+         JAVASCRIPT
+    =============================== -->
+
+    <script src="js/metrics.js"></script>
+    <script src="js/animation.js"></script>
+    <script src="js/simulator.js"></script>
+    <script src="js/graphs.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
